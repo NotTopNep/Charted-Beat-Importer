@@ -609,7 +609,8 @@
 
   <!-- BACKUP NOTE -->
   <div class="backup-note">
-    <span>💾</span> Automatic backup of original .sbc (<span id="backupName">—</span>)
+    <span>💾</span> Use "Backup Only" to save a backup. Import does NOT auto-backup.
+    <span id="backupName" style="margin-left:auto;">—</span>
   </div>
 
   <!-- LOG -->
@@ -619,9 +620,9 @@
 
   <!-- FOOTER -->
   <div class="footer">
-    <span>✅ Backup Only: Creates a backup of the original file</span>
+    <span>💾 Backup Only: Creates a backup of the original file</span>
     <span>•</span>
-    <span>⚡ Import: Updates metronome + BEAT events + creates backup</span>
+    <span>⚡ Import: Updates metronome + BEAT events (NO auto-backup)</span>
   </div>
 </div>
 
@@ -879,15 +880,12 @@
       backupName.textContent = `${baseName}.sbc.backup`;
     }
 
-    // ---------- import: replace metronome and BEAT events ----------
+    // ---------- import: replace metronome and BEAT events (NO backup) ----------
     function importMetronome() {
       if (!sbcData || !beatTimestamps.length) {
         log('❌ Missing data: load .sbc and beat timestamps first.', true);
         return;
       }
-
-      // create backup string from original content
-      let backupContent = originalSbcString || JSON.stringify(sbcData, null, 2);
 
       // Sort timestamps
       const sortedTimestamps = [...new Set(beatTimestamps)].sort((a,b) => a - b);
@@ -940,15 +938,13 @@
       sbcBeatCountEl.textContent = sortedTimestamps.length;
       beatCountEl.textContent = sortedTimestamps.length;
 
-      // create new json string
+      // create new json string (NO backup)
       const updatedJson = JSON.stringify(sbcData, null, 2);
 
-      // download .sbc with backup
+      // download only the updated chart
       const baseName = sbcFileName.replace(/\.sbc$/i, '') || 'chart';
-      const backupBlob = new Blob([backupContent], { type: 'application/json' });
       const newBlob = new Blob([updatedJson], { type: 'application/json' });
 
-      // download new chart (the IMPORTED version)
       const link = document.createElement('a');
       link.href = URL.createObjectURL(newBlob);
       link.download = `${baseName}_imported.sbc`;
@@ -957,19 +953,10 @@
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
 
-      // download backup (the ORIGINAL version)
-      const backupLink = document.createElement('a');
-      backupLink.href = URL.createObjectURL(backupBlob);
-      backupLink.download = `${baseName}.sbc.backup`;
-      document.body.appendChild(backupLink);
-      backupLink.click();
-      document.body.removeChild(backupLink);
-      URL.revokeObjectURL(backupLink.href);
-
       log(`✅ Import complete! Metronome + ${newBeatEvents.length} BEAT events updated.`);
-      log(`📥 Downloaded: ${baseName}_imported.sbc (updated) and ${baseName}.sbc.backup (original)`);
+      log(`📥 Downloaded: ${baseName}_imported.sbc (updated)`);
+      log(`💡 Use "Backup Only" button to save a backup of the original if needed.`);
       statusDot.className = 'dot success';
-      backupName.textContent = `${baseName}.sbc.backup`;
       
       updateUI();
     }
@@ -1025,7 +1012,7 @@
     updateUI();
     log('📂 Drop your .sbc and Sonic Visualiser beat file.');
     log('💾 Use "Backup Only" to save a backup of the original file.');
-    log('⚡ Use "Import" to update metronome + BEAT events (backup is auto-created).');
+    log('⚡ Use "Import" to update metronome + BEAT events.');
     statusDot.className = 'dot idle';
   })();
 </script>
