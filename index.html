@@ -579,6 +579,15 @@
     </div>
   </div>
 
+  <!-- OPTIONS -->
+  <div class="checkbox-group">
+    <input type="checkbox" id="keepExistingEvents" checked>
+    <label for="keepExistingEvents">You Agree that All existing BEAT will be removed </label>
+  </div>
+  <div class="checkbox-group">
+    <input type="checkbox" id="removeAllBeatEvents" checked>
+    <label for="removeAllBeatEvents">This is a button... heehheh (vibe coded) </label>
+  </div>
 
   <!-- ACTIONS -->
   <div class="actions">
@@ -1003,7 +1012,7 @@
     updateUI();
     log('📂 Drop your .sbc and Sonic Visualiser beat file.');
     log('💾 Use "Backup Only" to save a backup of the original file.');
-    log('⚡ Use "Import" to update metronome + BEAT events.');
+    log('⚡ Use "Import" to update metronome + BEAT events');
     statusDot.className = 'dot idle';
   })();
 </script>
