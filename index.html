@@ -265,36 +265,6 @@
     }
 
     /* ========================================
-       CHECKBOXES
-    ======================================== */
-    .checkbox-group {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      margin: 8px 0;
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 2px 0;
-    }
-    .checkbox-group input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--accent);
-      cursor: pointer;
-      flex-shrink: 0;
-      margin-top: 2px;
-      border-radius: 4px;
-    }
-    .checkbox-group:hover {
-      color: var(--text-primary);
-    }
-    .checkbox-group label {
-      cursor: pointer;
-      line-height: 1.4;
-    }
-
-    /* ========================================
        BUTTONS
     ======================================== */
     .actions {
@@ -445,7 +415,7 @@
       font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
       font-size: 0.78rem;
       color: var(--text-secondary);
-      max-height: 150px;
+      max-height: 180px;
       overflow-y: auto;
       border: 1px solid var(--border-color);
       margin-top: 12px;
@@ -475,6 +445,34 @@
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+
+    /* ========================================
+       BPM PREVIEW
+    ======================================== */
+    .bpm-preview {
+      background: var(--bg-tertiary);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      margin: 8px 0 4px 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      max-height: 60px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+    }
+    .bpm-preview .bpm-item {
+      display: inline-block;
+      background: var(--bg-input);
+      padding: 2px 10px;
+      border-radius: 12px;
+      margin: 2px 4px 2px 0;
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+    .bpm-preview .bpm-item strong {
+      color: var(--warning);
     }
 
     /* ========================================
@@ -546,12 +544,12 @@
     <h1>
       <span class="emoji">⚡</span>
       Charted Beat Importer
-      <small>v3.0</small>
+      <small>v4.0</small>
     </h1>
   </div>
   <div class="sub">
     <strong>📂 Drag & drop</strong> · .sbc + Sonic Visualiser .txt/.csv → 
-    <strong>metronome + BEAT events</strong>
+    <strong>metronome + BEAT events + BPM changes</strong>
   </div>
 
   <!-- DROP ZONE -->
@@ -561,7 +559,7 @@
     <div class="hint">Supports .sbc, .txt, .csv</div>
     <div class="badge-group">
       <span>📄 SBC Chart</span>
-      <span>🎵 Beat Timestamps</span>
+      <span>🎵 Beat Timestamps + BPM</span>
     </div>
   </div>
 
@@ -573,26 +571,22 @@
       <div class="badge" id="sbcBadge">not loaded</div>
     </div>
     <div class="file-item" id="beatFileDisplay">
-      <div class="label">🎵 Beat Timestamps</div>
+      <div class="label">🎵 Beat Timestamps + BPM</div>
       <div class="name empty" id="beatName">—</div>
       <div class="badge" id="beatBadge">not loaded</div>
     </div>
   </div>
 
-  <!-- OPTIONS -->
-  <div class="checkbox-group">
-    <input type="checkbox" id="keepExistingEvents" checked>
-    <label for="keepExistingEvents">You Agree that All existing BEAT will be removed </label>
-  </div>
-  <div class="checkbox-group">
-    <input type="checkbox" id="removeAllBeatEvents" checked>
-    <label for="removeAllBeatEvents">This is a button... heehheh (vibe coded) </label>
+  <!-- BPM Preview -->
+  <div id="bpmPreviewContainer" style="display:none;">
+    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:8px;">📊 BPM Changes Detected:</div>
+    <div class="bpm-preview" id="bpmPreview"></div>
   </div>
 
   <!-- ACTIONS -->
   <div class="actions">
     <button class="btn btn-backup" id="backupBtn" disabled>💾 Backup Only</button>
-    <button class="btn btn-primary" id="importBtn" disabled>⚡ Import (Metronome + BEAT Events)</button>
+    <button class="btn btn-primary" id="importBtn" disabled>⚡ Import (Metronome + BEAT + BPM)</button>
     <button class="btn btn-secondary" id="clearBtn">🗑️ Clear files</button>
   </div>
 
@@ -602,14 +596,14 @@
     <div class="info">
       <span><strong id="beatCount">0</strong> beats detected</span>
       <span><strong id="sbcBeatCount">0</strong> metronome entries</span>
-      <span id="bpmStatus">⚡ BPM changes supported</span>
+      <span id="bpmStatus">⚡ BPM changes: 0</span>
     </div>
     <span class="backup-label" id="backupLabel">💾 backup: ready</span>
   </div>
 
   <!-- BACKUP NOTE -->
   <div class="backup-note">
-    <span>💾</span> Use "Backup Only" to save a backup.
+    <span>💾</span> Use "Backup Only" to save a backup. Import does NOT auto-backup.
     <span id="backupName" style="margin-left:auto;">—</span>
   </div>
 
@@ -622,7 +616,7 @@
   <div class="footer">
     <span>💾 Backup Only: Creates a backup of the original file</span>
     <span>•</span>
-    <span>⚡ Import: Updates metronome + BEAT events </span>
+    <span>⚡ Import: Updates metronome + BEAT events + BPM changes</span>
   </div>
 </div>
 
@@ -643,8 +637,8 @@
     const logOutput = document.getElementById('logOutput');
     const backupName = document.getElementById('backupName');
     const bpmStatus = document.getElementById('bpmStatus');
-    const keepExistingEvents = document.getElementById('keepExistingEvents');
-    const removeAllBeatEvents = document.getElementById('removeAllBeatEvents');
+    const bpmPreview = document.getElementById('bpmPreview');
+    const bpmPreviewContainer = document.getElementById('bpmPreviewContainer');
 
     // ---------- state ----------
     let sbcData = null;
@@ -652,6 +646,7 @@
     let beatTimestamps = [];
     let beatFileName = '';
     let originalSbcString = '';
+    let bpmChanges = [];
     let originalMetronomeLength = 0;
 
     // ---------- helpers ----------
@@ -694,14 +689,24 @@
         beatBadge.textContent = `✅ ${beatTimestamps.length} beats`;
         beatBadge.className = 'badge loaded';
         beatCountEl.textContent = beatTimestamps.length;
-        bpmStatus.textContent = '🎵 BPM changes supported (timestamp-based)';
       } else {
         beatName.textContent = '—';
         beatName.classList.add('empty');
         beatBadge.textContent = 'not loaded';
         beatBadge.className = 'badge';
         beatCountEl.textContent = '0';
-        bpmStatus.textContent = '⚡ BPM changes supported';
+      }
+
+      // BPM status
+      if (bpmChanges.length > 0) {
+        bpmStatus.textContent = `⚡ BPM changes: ${bpmChanges.length}`;
+        bpmPreviewContainer.style.display = 'block';
+        bpmPreview.innerHTML = bpmChanges.map(b => 
+          `<span class="bpm-item"><strong>${b.time}ms</strong> → ${b.bpm} BPM</span>`
+        ).join('');
+      } else {
+        bpmStatus.textContent = '⚡ BPM changes: 0';
+        bpmPreviewContainer.style.display = 'none';
       }
 
       // buttons
@@ -718,7 +723,7 @@
       }
       
       if (!importBtn.disabled) {
-        importBtn.title = 'Import beats: Update metronome and BEAT events';
+        importBtn.title = 'Import beats: Update metronome, BEAT events, and BPM changes';
       } else {
         importBtn.title = 'Load both .sbc and beat file first';
       }
@@ -731,26 +736,51 @@
     // ---------- parse beat file (Sonic Visualiser .txt / .csv) ----------
     function parseBeatFile(text) {
       const lines = text.split(/\r?\n/);
-      const values = [];
+      const beatValues = [];
+      const bpmValues = [];
+      
       for (let line of lines) {
         line = line.trim();
         if (!line) continue;
+        
         const parts = line.split(/\s+/);
         let first = parts[0];
+        let bpmPart = parts.length > 1 ? parts[1] : '';
+        
+        // Handle CSV format
         if (first.includes(',')) {
           const csvParts = first.split(',');
           first = csvParts[0];
+          bpmPart = csvParts.length > 1 ? csvParts[1] : '';
         }
+        
+        // Parse timestamp
         const num = parseFloat(first);
         if (!isNaN(num) && num >= 0) {
           let ms = num;
           if (num < 1000) {
             ms = num * 1000;
           }
-          values.push(Math.round(ms));
+          beatValues.push(Math.round(ms));
+          
+          // Parse BPM if present
+          if (bpmPart) {
+            // Extract number from "132.512BPM" or similar
+            const bpmMatch = bpmPart.match(/([\d.]+)/);
+            if (bpmMatch) {
+              const bpm = parseFloat(bpmMatch[1]);
+              if (!isNaN(bpm) && bpm > 0) {
+                bpmValues.push({
+                  time: Math.round(ms),
+                  bpm: Math.round(bpm)
+                });
+              }
+            }
+          }
         }
       }
-      return values;
+      
+      return { beats: beatValues, bpmChanges: bpmValues };
     }
 
     // ---------- read file as text ----------
@@ -801,14 +831,26 @@
       if (beatFile) {
         try {
           const content = await readFileAsText(beatFile);
-          const timestamps = parseBeatFile(content);
-          if (timestamps.length === 0) {
+          const parsed = parseBeatFile(content);
+          
+          if (parsed.beats.length === 0) {
             log('⚠️ Beat file parsed, but no valid timestamps found.', true);
             return;
           }
-          beatTimestamps = timestamps;
+          
+          beatTimestamps = parsed.beats;
+          bpmChanges = parsed.bpmChanges;
           beatFileName = beatFile.name;
-          log(`🎵 Loaded beat file: ${beatFileName} (${timestamps.length} timestamps)`);
+          
+          log(`🎵 Loaded beat file: ${beatFileName} (${beatTimestamps.length} timestamps)`);
+          if (bpmChanges.length > 0) {
+            log(`📊 Found ${bpmChanges.length} BPM changes in beat file`);
+            bpmChanges.forEach(b => {
+              log(`   • ${b.time}ms → ${b.bpm} BPM`);
+            });
+          } else {
+            log(`📊 No BPM changes found in beat file`);
+          }
         } catch (err) {
           log(`❌ Error reading beat file: ${err.message}`, true);
           return;
@@ -856,6 +898,15 @@
       return beatEvents;
     }
 
+    // ---------- generate BPM events ----------
+    function generateBpmEvents(bpmChanges) {
+      return bpmChanges.map(b => ({
+        time: b.time,
+        type: "BPM",
+        bpm: b.bpm
+      }));
+    }
+
     // ---------- backup only ----------
     function backupOnly() {
       if (!sbcData) {
@@ -880,7 +931,7 @@
       backupName.textContent = `${baseName}.sbc.backup`;
     }
 
-    // ---------- import: replace metronome and BEAT events (NO backup) ----------
+    // ---------- import: replace metronome, BEAT events, and BPM ----------
     function importMetronome() {
       if (!sbcData || !beatTimestamps.length) {
         log('❌ Missing data: load .sbc and beat timestamps first.', true);
@@ -894,34 +945,51 @@
       const oldMetronomeCount = sbcData.metronome?.length || 0;
       const existingBeatEvents = sbcData.events?.filter(event => event.type === 'BEAT') || [];
       const oldBeatEventCount = existingBeatEvents.length;
+      const existingBpmEvents = sbcData.events?.filter(event => event.type === 'BPM') || [];
+      const oldBpmEventCount = existingBpmEvents.length;
 
       // 1. Update metronome
       sbcData.metronome = sortedTimestamps;
 
-      // 2. Update BEAT events
+      // 2. Update BEAT events (remove all existing BEAT events)
       if (!sbcData.events) {
         sbcData.events = [];
       }
 
-      // Remove all existing BEAT events if option is checked
-      if (removeAllBeatEvents.checked) {
-        sbcData.events = sbcData.events.filter(event => event.type !== 'BEAT');
+      // Remove all existing BEAT events
+      sbcData.events = sbcData.events.filter(event => event.type !== 'BEAT');
+      if (oldBeatEventCount > 0) {
         log(`🗑️ Removed ${oldBeatEventCount} existing BEAT events`);
       }
 
       // Generate new BEAT events
       const newBeatEvents = generateBeatEvents(sortedTimestamps);
       
-      if (keepExistingEvents.checked) {
-        sbcData.events.push(...newBeatEvents);
-        sbcData.events.sort((a, b) => (a.time || 0) - (b.time || 0));
-        log(`📊 Merged ${newBeatEvents.length} new BEAT events with existing events`);
-      } else {
-        const nonBeatEvents = sbcData.events.filter(event => event.type !== 'BEAT');
-        sbcData.events = [...nonBeatEvents, ...newBeatEvents];
-        sbcData.events.sort((a, b) => (a.time || 0) - (b.time || 0));
-        log(`📊 Replaced events with ${newBeatEvents.length} BEAT events (kept ${nonBeatEvents.length} non-BEAT events)`);
+      // Add new BEAT events
+      sbcData.events.push(...newBeatEvents);
+      log(`📊 Added ${newBeatEvents.length} new BEAT events`);
+
+      // 3. Update BPM events (remove all existing BPM events)
+      // Remove existing BPM events
+      sbcData.events = sbcData.events.filter(event => event.type !== 'BPM');
+      if (oldBpmEventCount > 0) {
+        log(`🗑️ Removed ${oldBpmEventCount} existing BPM events`);
       }
+
+      // Generate new BPM events if any exist
+      if (bpmChanges.length > 0) {
+        const newBpmEvents = generateBpmEvents(bpmChanges);
+        sbcData.events.push(...newBpmEvents);
+        log(`📊 Added ${newBpmEvents.length} BPM change events`);
+        newBpmEvents.forEach(b => {
+          log(`   • ${b.time}ms → ${b.bpm} BPM`);
+        });
+      } else {
+        log(`📊 No BPM changes to import`);
+      }
+      
+      // Sort all events by time
+      sbcData.events.sort((a, b) => (a.time || 0) - (b.time || 0));
 
       // Log changes
       log(`📊 Metronome: ${oldMetronomeCount} → ${sortedTimestamps.length} beats (${sortedTimestamps.length - oldMetronomeCount > 0 ? '+' : ''}${sortedTimestamps.length - oldMetronomeCount})`);
@@ -954,6 +1022,9 @@
       URL.revokeObjectURL(link.href);
 
       log(`✅ Import complete! Metronome + ${newBeatEvents.length} BEAT events updated.`);
+      if (bpmChanges.length > 0) {
+        log(`✅ ${bpmChanges.length} BPM changes added to the chart.`);
+      }
       log(`📥 Downloaded: ${baseName}_imported.sbc (updated)`);
       log(`💡 Use "Backup Only" button to save a backup of the original if needed.`);
       statusDot.className = 'dot success';
@@ -969,6 +1040,7 @@
       beatFileName = '';
       originalSbcString = '';
       originalMetronomeLength = 0;
+      bpmChanges = [];
       clearLog();
       statusDot.className = 'dot idle';
       updateUI();
@@ -1012,7 +1084,8 @@
     updateUI();
     log('📂 Drop your .sbc and Sonic Visualiser beat file.');
     log('💾 Use "Backup Only" to save a backup of the original file.');
-    log('⚡ Use "Import" to update metronome + BEAT events');
+    log('⚡ Use "Import" to update metronome + BEAT events + BPM changes.');
+    log('📊 BPM changes are extracted from lines like: "0.911383220\t132.512BPM"');
     statusDot.className = 'dot idle';
   })();
 </script>
