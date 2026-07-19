@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎨 MP4 to Sprite Converter</title>
+  <style>
+    /* ========================================
+       ROOT VARIABLES
+    ======================================== */
+    :root {
+      --bg-primary: #0f1219;
+      --bg-secondary: #1a1f2b;
+      --bg-tertiary: #111724;
+      --bg-input: #0c111b;
+      --bg-hover: #1c2333;
+      --border-color: #2d3548;
+      --border-light: #293040;
+      --border-hover: #3f4a6a;
+      --text-primary: #e8edf5;
+      --text-secondary: #b7c0da;
+      --text-muted: #8892b0;
+      --text-dim: #6a7699;
+      --accent: #4f6ef7;
+      --accent-hover: #3f5ee7;
+      --success: #34d399;
+      --danger: #f87171;
+      --warning: #fbbf24;
+      --radius: 12px;
+      --radius-lg: 20px;
+      --radius-xl: 32px;
+      --shadow: 0 20px 40px rgba(0,0,0,0.6);
+      --transition: 0.25s ease;
+    }
+
+    /* ========================================
+       RESET & BASE
+    ======================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: var(--text-primary);
+      background-image: 
+        radial-gradient(ellipse at 20% 50%, rgba(79, 110, 247, 0.03) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 50%, rgba(79, 110, 247, 0.03) 0%, transparent 60%);
+      line-height: 1.6;
+    }
+
+    /* ========================================
+       SCROLLBAR
+    ======================================== */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-input);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
+    /* ========================================
+       CARD
+    ======================================== */
+    .card {
+      max-width: 1000px;
+      width: 100%;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      padding: 36px 32px;
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04);
+      border: 1px solid var(--border-color);
+      transition: border-color var(--transition);
+    }
+    .card:hover {
+      border-color: var(--border-hover);
+    }
+
+    /* ========================================
+       HEADER
+    ======================================== */
+    .flex-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 16px;
+    }
+
+    h1 {
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #f0f4ff 0%, var(--text-muted) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    h1 .emoji {
+      -webkit-text-fill-color: initial;
+      color: var(--warning);
+    }
+    h1 small {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      -webkit-text-fill-color: initial;
+      background: var(--bg-tertiary);
+      padding: 4px 14px;
+      border-radius: 40px;
+      border: 1px solid var(--border-color);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .sub {
+      color: var(--text-secondary);
+      margin-bottom: 28px;
+      border-left: 3px solid var(--accent);
+      padding-left: 16px;
+      font-weight: 400;
+      font-size: 0.95rem;
+    }
+    .sub strong {
+      color: var(--text-primary);
+    }
+
+    /* ========================================
+       DROP ZONE
+    ======================================== */
+    .drop-zone {
+      background: var(--bg-tertiary);
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 32px 20px;
+      text-align: center;
+      transition: all var(--transition);
+      cursor: pointer;
+      margin-bottom: 28px;
+    }
+    .drop-zone:hover {
+      border-color: var(--accent);
+      background: var(--bg-hover);
+    }
+    .drop-zone.dragover {
+      border-color: var(--accent);
+      background: var(--bg-hover);
+      transform: scale(1.01);
+      box-shadow: 0 0 40px rgba(79, 110, 247, 0.06);
+    }
+    .drop-zone .icon {
+      font-size: 2.8rem;
+      line-height: 1;
+      margin-bottom: 6px;
+      display: block;
+      opacity: 0.8;
+    }
+    .drop-zone p {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .drop-zone .hint {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-top: 6px;
+    }
+    .drop-zone .badge-group {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .drop-zone .badge-group span {
+      background: var(--bg-secondary);
+      padding: 2px 14px;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      font-weight: 500;
+    }
+
+    /* ========================================
+       FILE GRID
+    ======================================== */
+    .file-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 24px 0 16px;
+    }
+    @media (max-width: 600px) {
+      .file-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .file-item {
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      border: 1px solid var(--border-light);
+      transition: border-color var(--transition);
+    }
+    .file-item:hover {
+      border-color: var(--border-hover);
+    }
+    .file-item .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .file-item .name {
+      font-weight: 500;
+      word-break: break-all;
+      margin-top: 4px;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      min-height: 1.4em;
+    }
+    .file-item .name.empty {
+      color: var(--text-dim);
+      font-weight: 400;
+    }
+    .file-item .badge {
+      display: inline-block;
+      background: var(--bg-secondary);
+      padding: 2px 14px;
+      border-radius: 50px;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      border: 1px solid var(--border-color);
+      font-weight: 500;
+    }
+    .file-item .badge.loaded {
+      color: var(--success);
+      border-color: rgba(52, 211, 153, 0.2);
+      background: rgba(52, 211, 153, 0.08);
+    }
+
+    /* ========================================
+       SETTINGS
+    ======================================== */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin: 16px 0 18px;
+      background: var(--bg-tertiary);
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+    }
+    @media (max-width: 768px) {
+      .settings-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 480px) {
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .setting-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .setting-group label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .setting-group input,
+    .setting-group select {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      width: 100%;
+      transition: border-color var(--transition);
+      font-family: inherit;
+    }
+    .setting-group input:focus,
+    .setting-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.1);
+    }
+    .setting-group input:hover,
+    .setting-group select:hover {
+      border-color: var(--border-hover);
+    }
+    .setting-group .helper {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    /* ========================================
+       CHECKBOXES
+    ======================================== */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 2px 0;
+    }
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+      border-radius: 4px;
+    }
+    .checkbox-group:hover {
+      color: var(--text-primary);
+    }
+
+    /* ========================================
+       BUTTONS
+    ======================================== */
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      padding: 12px 28px;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1 1 auto;
+      justify-content: center;
+      font-family: inherit;
+      min-height: 48px;
+    }
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+    .btn:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    .btn:disabled {
+      opacity: 0.4;
+      pointer-events: none;
+      filter: grayscale(0.3);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      box-shadow: 0 4px 16px rgba(79, 110, 247, 0.3);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      box-shadow: 0 6px 24px rgba(79, 110, 247, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      border-color: var(--border-color);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--border-color);
+      border-color: var(--border-hover);
+    }
+
+    .btn-success {
+      background: var(--success);
+      border-color: var(--success);
+      color: #0b0e14;
+    }
+    .btn-success:hover:not(:disabled) {
+      background: #2bbd8a;
+      border-color: #2bbd8a;
+      box-shadow: 0 4px 16px rgba(52, 211, 153, 0.3);
+    }
+
+    /* ========================================
+       PREVIEW
+    ======================================== */
+    .preview-container {
+      background: var(--bg-tertiary);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin: 12px 0;
+      border: 1px solid var(--border-color);
+      display: none;
+      position: relative;
+    }
+    .preview-container.active {
+      display: block;
+    }
+    .preview-container video {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: var(--radius);
+      display: block;
+      margin: 0 auto;
+    }
+    .preview-container .preview-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* ========================================
+       STATUS
+    ======================================== */
+    .status {
+      background: var(--bg-input);
+      border-radius: 60px;
+      padding: 12px 22px;
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      border: 1px solid var(--border-color);
+    }
+    .status .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: background var(--transition);
+    }
+    .status .dot.idle { background: var(--text-dim); }
+    .status .dot.success { background: var(--success); }
+    .status .dot.error { background: var(--danger); }
+    .status .dot.processing { 
+      background: var(--warning); 
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .status .info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 24px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      flex: 1;
+    }
+    .status .info strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ========================================
+       LOG
+    ======================================== */
+    .log {
+      background: var(--bg-input);
+      border-radius: var(--radius);
+      padding: 12px 18px;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      max-height: 150px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      margin-top: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.7;
+    }
+    .log:empty { display: none; }
+
+    /* ========================================
+       DIVIDER & FOOTER
+    ======================================== */
+    hr {
+      border: 0;
+      border-top: 1px solid var(--border-color);
+      margin: 22px 0 12px;
+    }
+
+    .footer {
+      display: flex;
+      gap: 16px;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      flex-wrap: wrap;
+    }
+    .footer span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 768px) {
+      .card {
+        padding: 24px 18px;
+        border-radius: var(--radius-lg);
+      }
+      h1 {
+        font-size: 1.6rem;
+      }
+      .status {
+        padding: 12px 16px;
+        border-radius: var(--radius);
+      }
+      .status .info {
+        font-size: 0.82rem;
+        gap: 6px 14px;
+      }
+      .actions .btn {
+        padding: 10px 20px;
+        font-size: 0.85rem;
+        min-height: 42px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 12px;
+      }
+      .card {
+        padding: 18px 14px;
+        border-radius: var(--radius);
+      }
+      h1 {
+        font-size: 1.3rem;
+      }
+      .drop-zone {
+        padding: 24px 16px;
+      }
+      .drop-zone .icon {
+        font-size: 2.4rem;
+      }
+      .file-item {
+        padding: 12px 14px;
+      }
+    }
+
+    /* ========================================
+       UTILITY
+    ======================================== */
+    input[type="file"] { display: none; }
+    .text-muted { color: var(--text-muted); }
+    .text-success { color: var(--success); }
+    .gap-2 { gap: 8px; }
+    .hidden { display: none; }
+    .mt-8 { margin-top: 8px; }
+  </style>
+</head>
+<body>
+<div class="card" id="app">
+  
+  <!-- HEADER -->
+  <div class="flex-row">
+    <h1>
+      <span class="emoji">🎨</span>
+      MP4 to Sprite Converter
+      <small>v3.1</small>
+    </h1>
+  </div>
+  <div class="sub">
+    <strong>📂 Drop an MP4 file</strong> → <strong>Extracts frames & creates sprite events</strong> → <strong>No flashing between frames</strong>
+  </div>
+
+  <!-- DROP ZONE -->
+  <div class="drop-zone" id="dropZone">
+    <span class="icon">🎬</span>
+    <p><strong>Drop an MP4 file here</strong> or click to browse</p>
+    <div class="hint">Supports .mp4, .webm, .mov, .avi</div>
+    <div class="badge-group">
+      <span>🎥 MP4</span>
+      <span>🔄 GIF</span>
+      <span>📹 Video</span>
+    </div>
+  </div>
+
+  <!-- FILE GRID -->
+  <div class="file-grid">
+    <div class="file-item" id="videoFileDisplay">
+      <div class="label">🎬 Video File</div>
+      <div class="name empty" id="videoName">—</div>
+      <div class="badge" id="videoBadge">not loaded</div>
+    </div>
+    <div class="file-item" id="sbcFileDisplay">
+      <div class="label">📄 SBC Chart (Optional)</div>
+      <div class="name empty" id="sbcName">—</div>
+      <div class="badge" id="sbcBadge">not loaded</div>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="preview-container" id="previewContainer">
+    <video id="previewVideo" controls></video>
+    <div class="preview-label" id="previewLabel">Video Preview</div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="settings-grid">
+    <div class="setting-group">
+      <label>🎯 FPS</label>
+      <input type="number" id="fpsInput" value="12" min="1" max="60" step="1">
+      <span class="helper">Frames per second</span>
+    </div>
+    <div class="setting-group">
+      <label>📐 Scale</label>
+      <input type="number" id="scaleInput" value="1" min="0.1" max="5" step="0.1">
+      <span class="helper">Size multiplier</span>
+    </div>
+    <div class="setting-group">
+      <label>🎯 Position</label>
+      <select id="positionSelect">
+        <option value="center">Center (50%, 50%)</option>
+        <option value="fullscreen" selected>Full Screen (50%, 50%, 100% x 100%)</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- CUSTOM POSITION -->
+  <div id="customPosition" style="display:none; margin: 8px 0 16px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px;">
+      <div class="setting-group">
+        <label>X (%)</label>
+        <input type="number" id="customX" value="50" min="0" max="100" step="1">
+      </div>
+      <div class="setting-group">
+        <label>Y (%)</label>
+        <input type="number" id="customY" value="50" min="0" max="100" step="1">
+      </div>
+      <div class="setting-group">
+        <label>Width (%)</label>
+        <input type="number" id="customWidth" value="50" min="1" max="100" step="1">
+      </div>
+      <div class="setting-group">
+        <label>Height (%)</label>
+        <input type="number" id="customHeight" value="50" min="1" max="100" step="1">
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTIONS -->
+  <div class="checkbox-group">
+    <input type="checkbox" id="loopSprite">
+    <label for="loopSprite">🔄 Loop (disabled by default - plays once)</label>
+  </div>
+  <div class="checkbox-group">
+    <input type="checkbox" id="overlapFrames" checked>
+    <label for="overlapFrames">🔄 Overlap frames (prevents flashing)</label>
+  </div>
+  <div class="checkbox-group">
+    <input type="checkbox" id="matchDuration" checked>
+    <label for="matchDuration">⏱️ Match video duration</label>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="actions">
+    <button class="btn btn-primary" id="analyzeBtn" disabled>🎨 Extract & Generate</button>
+    <button class="btn btn-success" id="exportBtn" disabled>📦 Export SBC + Sprites</button>
+    <button class="btn btn-secondary" id="clearBtn">🗑️ Clear</button>
+  </div>
+
+  <!-- STATUS -->
+  <div class="status">
+    <span class="dot idle" id="statusDot"></span>
+    <div class="info">
+      <span><strong id="videoInfo">No video loaded</strong></span>
+      <span id="frameInfo">🎨 Frames: 0</span>
+      <span id="durationInfo">⏱️ Duration: 0s</span>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="log" id="logOutput"></div>
+
+  <hr>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>🎨 Each frame is a separate SPRITE event with overlapping duration</span>
+    <span>•</span>
+    <span>📄 Overlap prevents flashing between frames</span>
+    <span>•</span>
+    <span>🖥️ Fullscreen: x:50, y:50, width:100, height:100</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+  (function() {
+    // ---------- DOM refs ----------
+    const dropZone = document.getElementById('dropZone');
+    const videoName = document.getElementById('videoName');
+    const videoBadge = document.getElementById('videoBadge');
+    const videoInfo = document.getElementById('videoInfo');
+    const sbcName = document.getElementById('sbcName');
+    const sbcBadge = document.getElementById('sbcBadge');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const statusDot = document.getElementById('statusDot');
+    const logOutput = document.getElementById('logOutput');
+    const frameInfo = document.getElementById('frameInfo');
+    const durationInfo = document.getElementById('durationInfo');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewVideo = document.getElementById('previewVideo');
+
+    // Settings
+    const fpsInput = document.getElementById('fpsInput');
+    const scaleInput = document.getElementById('scaleInput');
+    const positionSelect = document.getElementById('positionSelect');
+    const customX = document.getElementById('customX');
+    const customY = document.getElementById('customY');
+    const customWidth = document.getElementById('customWidth');
+    const customHeight = document.getElementById('customHeight');
+    const customPosition = document.getElementById('customPosition');
+    const loopSprite = document.getElementById('loopSprite');
+    const overlapFrames = document.getElementById('overlapFrames');
+    const matchDuration = document.getElementById('matchDuration');
+
+    // ---------- state ----------
+    let videoFile = null;
+    let videoDataUrl = null;
+    let sbcData = null;
+    let sbcFileName = '';
+    let extractedFrames = [];
+    let videoDuration = 0;
+    let videoWidth = 0;
+    let videoHeight = 0;
+    let generatedSpriteEvents = [];
+
+    // ---------- helpers ----------
+    function log(msg, isError = false) {
+      const prefix = isError ? '⚠️ ' : '📌 ';
+      logOutput.textContent += prefix + msg + '\n';
+      logOutput.scrollTop = logOutput.scrollHeight;
+      statusDot.className = isError ? 'dot error' : 'dot success';
+    }
+
+    function clearLog() {
+      logOutput.textContent = '';
+    }
+
+    function updateUI() {
+      if (videoFile) {
+        videoName.textContent = videoFile.name;
+        videoName.classList.remove('empty');
+        videoBadge.textContent = `✅ ${videoFile.type || 'Video'}`;
+        videoBadge.className = 'badge loaded';
+        videoInfo.textContent = `🎬 ${videoFile.name}`;
+        durationInfo.textContent = `⏱️ ${(videoDuration/1000).toFixed(1)}s`;
+      } else {
+        videoName.textContent = '—';
+        videoName.classList.add('empty');
+        videoBadge.textContent = 'not loaded';
+        videoBadge.className = 'badge';
+        videoInfo.textContent = 'No video loaded';
+        durationInfo.textContent = '⏱️ 0s';
+      }
+
+      if (sbcData) {
+        sbcName.textContent = sbcFileName || 'SBC chart';
+        sbcName.classList.remove('empty');
+        sbcBadge.textContent = `✅ ${sbcData.metronome?.length || 0} beats`;
+        sbcBadge.className = 'badge loaded';
+      } else {
+        sbcName.textContent = '—';
+        sbcName.classList.add('empty');
+        sbcBadge.textContent = 'not loaded';
+        sbcBadge.className = 'badge';
+      }
+
+      analyzeBtn.disabled = !videoFile;
+      exportBtn.disabled = extractedFrames.length === 0;
+      frameInfo.textContent = `🎨 ${extractedFrames.length}`;
+    }
+
+    // ---------- read file ----------
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = e => reject(e.target.error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = e => reject(e.target.error);
+        reader.readAsText(file);
+      });
+    }
+
+    // ---------- handle file drop ----------
+    async function handleFiles(fileList) {
+      let video = null;
+      let sbc = null;
+
+      for (const file of fileList) {
+        const name = file.name.toLowerCase();
+        if (name.endsWith('.sbc')) sbc = file;
+        else if (file.type.startsWith('video/') || 
+                 name.endsWith('.mp4') || name.endsWith('.webm') || 
+                 name.endsWith('.mov') || name.endsWith('.avi') ||
+                 name.endsWith('.gif')) video = file;
+      }
+
+      if (!video && !sbc) {
+        log('⚠️ No supported files detected.', true);
+        return;
+      }
+
+      // Process video
+      if (video) {
+        try {
+          videoDataUrl = await readFileAsDataURL(video);
+          videoFile = video;
+          
+          const videoEl = document.createElement('video');
+          videoEl.src = videoDataUrl;
+          videoEl.preload = 'metadata';
+          
+          await new Promise((resolve) => {
+            videoEl.onloadedmetadata = () => {
+              videoDuration = videoEl.duration * 1000;
+              videoWidth = videoEl.videoWidth || 640;
+              videoHeight = videoEl.videoHeight || 480;
+              
+              previewContainer.classList.add('active');
+              previewVideo.src = videoDataUrl;
+              previewVideo.load();
+              
+              log(`🎬 Loaded: ${video.name}`);
+              log(`📐 ${videoWidth}x${videoHeight} | ⏱️ ${(videoDuration/1000).toFixed(2)}s`);
+              
+              if (matchDuration.checked) {
+                const suggestedFps = Math.max(1, Math.min(30, Math.floor(videoDuration / 1000)));
+                fpsInput.value = suggestedFps;
+              }
+              
+              resolve();
+              videoEl.remove();
+            };
+            videoEl.onerror = resolve;
+          });
+          
+          statusDot.className = 'dot success';
+        } catch (err) {
+          log(`❌ Error loading video: ${err.message}`, true);
+          return;
+        }
+      }
+
+      if (sbc) {
+        try {
+          const content = await readFileAsText(sbc);
+          sbcData = JSON.parse(content);
+          sbcFileName = sbc.name;
+          log(`📄 Loaded SBC: ${sbc.name}`);
+        } catch (err) {
+          log(`❌ Error parsing SBC: ${err.message}`, true);
+        }
+      }
+
+      updateUI();
+      if (videoFile) {
+        log('✅ Click "Extract & Generate"');
+      }
+    }
+
+    // ---------- extract frames from video ----------
+    function extractFramesFromVideo(dataUrl, fps) {
+      return new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        video.src = dataUrl;
+        video.preload = 'metadata';
+        video.muted = true;
+        video.crossOrigin = 'anonymous';
+
+        video.onloadedmetadata = () => {
+          const duration = video.duration;
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const frames = [];
+
+          const maxDim = 480;
+          let w = video.videoWidth || 640;
+          let h = video.videoHeight || 480;
+          
+          if (w > maxDim || h > maxDim) {
+            const ratio = Math.min(maxDim / w, maxDim / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          
+          canvas.width = w;
+          canvas.height = h;
+
+          const totalFrames = Math.floor(duration * fps);
+          const timeStep = duration / totalFrames;
+          let extracted = 0;
+
+          function extractFrame(index) {
+            if (index >= totalFrames) {
+              resolve(frames);
+              video.remove();
+              canvas.remove();
+              return;
+            }
+
+            const time = index * timeStep;
+            video.currentTime = time;
+
+            video.onseeked = () => {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const frameDataUrl = canvas.toDataURL('image/png');
+              frames.push({
+                index: index,
+                time: Math.round(time * 1000),
+                dataUrl: frameDataUrl,
+                filename: `sprite_${String(index + 1).padStart(4, '0')}.png`
+              });
+              extracted++;
+              if (extracted % Math.max(1, Math.floor(totalFrames / 10)) === 0) {
+                log(`📸 ${extracted}/${totalFrames}`);
+              }
+              extractFrame(index + 1);
+            };
+
+            video.onerror = () => {
+              reject(new Error('Error seeking video'));
+            };
+          }
+
+          extractFrame(0);
+        };
+
+        video.onerror = () => {
+          reject(new Error('Error loading video'));
+        };
+      });
+    }
+
+    // ---------- generate sprite events ----------
+    function generateSpriteEvents(frames, settings) {
+      const events = [];
+      const { x, y, width, height, scale, fps, loop, duration } = settings;
+      
+      let frameDuration = 1000 / fps;
+      if (matchDuration.checked && frames.length > 0) {
+        frameDuration = duration / frames.length;
+      }
+      frameDuration = Math.round(frameDuration);
+      
+      let extendedDuration = frameDuration;
+      if (overlapFrames.checked) {
+        extendedDuration = Math.round(frameDuration * 1.15);
+      }
+      
+      const spriteScale = scale > 0 ? scale : 1;
+      
+      frames.forEach((frame, index) => {
+        const event = {
+          spritePath: `sprites/${frame.filename}`,
+          color: -1,
+          scale: spriteScale,
+          type: "SPRITE",
+          animation: {
+            durationPercent: 0,
+            type: "NONE",
+            speed: 1
+          },
+          duration: extendedDuration,
+          frameRate: fps,
+          animationOut: {
+            durationPercent: 25,
+            type: "NONE",
+            speed: 1
+          },
+          loop: loop,
+          alpha: 1,
+          rotationDegrees: 0,
+          x: x,
+          width: width,
+          y: y,
+          animated: false,
+          time: index * frameDuration,
+          animationIn: {
+            durationPercent: 25,
+            type: "NONE",
+            speed: 1
+          },
+          height: height
+        };
+        events.push(event);
+      });
+      
+      return events;
+    }
+
+    // ---------- get position ----------
+    function getPosition() {
+      const preset = positionSelect.value;
+      const positions = {
+        center: { x: 50, y: 50, width: 50, height: 50 },
+        fullscreen: { x: 50, y: 50, width: 100, height: 100 }
+      };
+      
+      if (preset === 'custom') {
+        return { 
+          x: parseFloat(customX.value) || 50, 
+          y: parseFloat(customY.value) || 50,
+          width: parseFloat(customWidth.value) || 50,
+          height: parseFloat(customHeight.value) || 50
+        };
+      }
+      
+      return positions[preset] || { x: 50, y: 50, width: 50, height: 50 };
+    }
+
+    // ---------- analyze and extract ----------
+    async function analyzeAndExtract() {
+      if (!videoFile) {
+        log('❌ No video loaded.', true);
+        return;
+      }
+
+      statusDot.className = 'dot processing';
+      log('🎨 Extracting frames...');
+
+      try {
+        const fps = parseInt(fpsInput.value) || 12;
+        const frames = await extractFramesFromVideo(videoDataUrl, fps);
+        extractedFrames = frames;
+        
+        if (frames.length === 0) {
+          log('❌ No frames extracted.', true);
+          statusDot.className = 'dot error';
+          return;
+        }
+        
+        const pos = getPosition();
+        const scale = parseFloat(scaleInput.value) || 1;
+        const loop = loopSprite.checked;
+        const duration = videoDuration || 3000;
+        
+        generatedSpriteEvents = generateSpriteEvents(frames, {
+          x: pos.x,
+          y: pos.y,
+          width: pos.width || 50,
+          height: pos.height || 50,
+          scale: scale,
+          fps: fps,
+          loop: loop,
+          duration: duration
+        });
+        
+        const frameDur = Math.round(duration/frames.length);
+        const extendedDur = overlapFrames.checked ? Math.round(frameDur * 1.15) : frameDur;
+        
+        log(`✅ ${frames.length} frames extracted`);
+        log(`📊 ${frameDur}ms per frame${overlapFrames.checked ? ` (${extendedDur}ms with overlap)` : ''}`);
+        log(`📐 x:${pos.x}, y:${pos.y}, ${pos.width}x${pos.height}`);
+        log(`🔄 Loop: ${loop ? 'ON' : 'OFF'}`);
+        
+        frameInfo.textContent = `🎨 ${frames.length}`;
+        updateUI();
+        statusDot.className = 'dot success';
+        
+      } catch (err) {
+        log(`❌ Error: ${err.message}`, true);
+        statusDot.className = 'dot error';
+      }
+    }
+
+    // ---------- export SBC + sprites ----------
+    async function exportSbc() {
+      if (extractedFrames.length === 0 || generatedSpriteEvents.length === 0) {
+        log('❌ No frames to export.', true);
+        return;
+      }
+
+      let finalSbcData;
+      let baseName = videoFile ? videoFile.name.replace(/\.[^.]+$/, '') : 'sprite';
+
+      if (sbcData) {
+        finalSbcData = JSON.parse(JSON.stringify(sbcData));
+        baseName = sbcFileName.replace(/\.sbc$/i, '') || 'sprite';
+        
+        if (!finalSbcData.events) {
+          finalSbcData.events = [];
+        }
+        
+        finalSbcData.events = finalSbcData.events.filter(e => e.type !== 'SPRITE');
+        finalSbcData.events.push(...generatedSpriteEvents);
+        finalSbcData.events.sort((a, b) => (a.time || 0) - (b.time || 0));
+        
+        log(`📄 Added ${generatedSpriteEvents.length} sprites to SBC`);
+      } else {
+        finalSbcData = {
+          metronome: [],
+          introEnd: -1,
+          events: generatedSpriteEvents
+        };
+        log(`📄 Created SBC with ${generatedSpriteEvents.length} sprites`);
+      }
+
+      try {
+        const zip = new JSZip();
+        
+        extractedFrames.forEach((frame) => {
+          const pngData = frame.dataUrl.split(',')[1];
+          zip.file(`sprites/${frame.filename}`, pngData, { base64: true });
+        });
+        
+        const sbcJson = JSON.stringify(finalSbcData, null, 2);
+        zip.file(`${baseName}.sbc`, sbcJson);
+        
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const zipLink = document.createElement('a');
+        zipLink.href = URL.createObjectURL(zipBlob);
+        zipLink.download = `${baseName}_sprites.zip`;
+        document.body.appendChild(zipLink);
+        zipLink.click();
+        document.body.removeChild(zipLink);
+        URL.revokeObjectURL(zipLink.href);
+        
+        log(`📦 Exported: ${baseName}_sprites.zip`);
+        log(`📁 ${extractedFrames.length} PNGs + ${baseName}.sbc`);
+        
+        statusDot.className = 'dot success';
+      } catch (err) {
+        log(`❌ Error: ${err.message}`, true);
+      }
+    }
+
+    // ---------- clear ----------
+    function clearFiles() {
+      videoFile = null;
+      videoDataUrl = null;
+      sbcData = null;
+      sbcFileName = '';
+      extractedFrames = [];
+      generatedSpriteEvents = [];
+      videoDuration = 0;
+      previewContainer.classList.remove('active');
+      previewVideo.src = '';
+      clearLog();
+      statusDot.className = 'dot idle';
+      updateUI();
+      log('🗑️ Cleared');
+    }
+
+    // ---------- position preset change ----------
+    positionSelect.addEventListener('change', () => {
+      if (positionSelect.value === 'custom') {
+        customPosition.style.display = 'block';
+      } else {
+        customPosition.style.display = 'none';
+      }
+    });
+
+    // ---------- drag & drop ----------
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        await handleFiles(e.dataTransfer.files);
+      }
+    });
+    dropZone.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = true;
+      input.accept = '.mp4,.webm,.mov,.avi,.gif,.sbc';
+      input.onchange = async (ev) => {
+        if (ev.target.files.length) {
+          await handleFiles(ev.target.files);
+        }
+      };
+      input.click();
+    });
+
+    // ---------- button events ----------
+    analyzeBtn.addEventListener('click', analyzeAndExtract);
+    exportBtn.addEventListener('click', exportSbc);
+    clearBtn.addEventListener('click', clearFiles);
+
+    // ---------- init ----------
+    updateUI();
+    log('🎬 Drop MP4 → Extract frames → Export SBC + sprites');
+    log('🔄 Overlap prevents flashing between frames');
+    statusDot.className = 'dot idle';
+  })();
+</script>
+</body>
+</html>
