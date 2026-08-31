@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🥁 OSU Taiko to SBC Converter</title>
+  <title>🥁 OSU Taiko to SBC Converter - ALL NOTES</title>
   <style>
     * {
       box-sizing: border-box;
@@ -77,7 +77,7 @@
     }
     .settings-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 14px;
       margin: 16px 0;
       background: #111724;
@@ -85,7 +85,6 @@
       border-radius: 12px;
       border: 1px solid #293040;
     }
-    @media (max-width: 768px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 480px) { .settings-grid { grid-template-columns: 1fr; } }
     .setting-group {
       display: flex;
@@ -271,13 +270,39 @@
       border-color: rgba(52,211,153,0.2);
       background: rgba(52,211,153,0.08);
     }
+    .offset-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin: 10px 0;
+      padding: 10px 16px;
+      background: #0c111b;
+      border-radius: 8px;
+      border: 1px solid #293040;
+    }
+    .offset-group label {
+      font-size: 0.8rem;
+      color: #6a7699;
+      font-weight: 500;
+    }
+    .offset-group input {
+      background: #0c111b;
+      border: 1px solid #2d3548;
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: #e8edf5;
+      font-size: 0.9rem;
+      width: 100px;
+    }
+    .offset-group input:focus { outline: none; border-color: #4f6ef7; }
+    .offset-group .helper { font-size: 0.7rem; color: #6a7699; }
   </style>
 </head>
 <body>
 <div class="card">
   
-  <h1><span class="emoji">🥁</span> OSU Taiko to SBC <small>v4.0</small></h1>
-  <div class="sub"><strong>📝 Paste your .osu file content</strong> → <strong>Click "Process OSU Data"</strong> → <strong>EXACT timing from OSU!</strong></div>
+  <h1><span class="emoji">🥁</span> OSU Taiko to SBC <small>v6.1 - ALL NOTES</small></h1>
+  <div class="sub"><strong>📝 Paste your .osu file</strong> → <strong>Converts ALL notes (no filters)</strong> → <strong>Export SBC</strong></div>
 
   <textarea class="osu-textarea" id="osuTextarea" placeholder="Paste your .osu file content here..."></textarea>
   <div class="file-info">
@@ -301,14 +326,6 @@
       </select>
     </div>
     <div class="setting-group">
-      <label>📊 Density</label>
-      <select id="densitySelect">
-        <option value="all">All Notes</option>
-        <option value="reduced">Reduced (every 2nd)</option>
-        <option value="sparse">Sparse (every 4th)</option>
-      </select>
-    </div>
-    <div class="setting-group">
       <label>🎯 Color</label>
       <select id="colorSelect">
         <option value="random">Random</option>
@@ -317,6 +334,13 @@
         <option value="alternate">Alternate</option>
       </select>
     </div>
+  </div>
+
+  <div class="offset-group">
+    <label>⏱️ Sync Offset:</label>
+    <input type="number" id="syncOffset" value="0" min="-200" max="200" step="1">
+    <span class="helper">Negative = earlier | Positive = later</span>
+    <button class="btn btn-secondary" id="resetOffsetBtn" style="padding: 4px 16px; min-height: 32px; font-size: 0.8rem; flex: 0;">Reset</button>
   </div>
 
   <div class="checkbox-group"><input type="checkbox" id="includeHitSound12" checked><label>⭕ hitSound 12 notes = "ring": true</label></div>
@@ -340,11 +364,13 @@
   <div class="log" id="logOutput"></div>
   <hr>
   <div class="footer">
-    <span>🥁 Converts Taiko notes to BEAT events</span>
+    <span>🥁 Converts ALL Taiko notes to BEAT events</span>
     <span>•</span>
-    <span>⚡ EXACT timing from OSU (no snapping!)</span>
+    <span>⚡ EXACT timing from OSU</span>
     <span>•</span>
-    <span>⭕ ONLY hitSound 12 = "ring": true (Type 5 is NOT ring)</span>
+    <span>⭕ ONLY hitSound 12 = "ring": true</span>
+    <span>•</span>
+    <span>📊 NO density filtering - every note is kept!</span>
   </div>
 </div>
 
@@ -360,13 +386,14 @@
   const processBtn = document.getElementById('processBtn');
   const exportBtn = document.getElementById('exportBtn');
   const clearBtn = document.getElementById('clearBtn');
+  const resetOffsetBtn = document.getElementById('resetOffsetBtn');
   const statusDot = document.getElementById('statusDot');
   const logOutput = document.getElementById('logOutput');
   const noteCount = document.getElementById('noteCount');
   const bpmInfo = document.getElementById('bpmInfo');
 
+  const syncOffset = document.getElementById('syncOffset');
   const noteTypeSelect = document.getElementById('noteTypeSelect');
-  const densitySelect = document.getElementById('densitySelect');
   const colorSelect = document.getElementById('colorSelect');
   const includeHitSound12 = document.getElementById('includeHitSound12');
   const generateMetronome = document.getElementById('generateMetronome');
@@ -453,9 +480,9 @@
         const isKat = (type === 8 || type === 13);
         const isType5 = (type === 5);
         const isHitSound12 = (hitSound === 12);
-        // ONLY hitSound 12 = ring, NOT type 5
-        const isRing = isHitSound12; // <-- ONLY THIS
+        const isRing = isHitSound12;
         
+        // EVERY note that is Don or Kat gets added - NO FILTERING
         if (isDon || isKat) {
           objects.push({
             time: time,
@@ -519,45 +546,47 @@
     }
   }
 
-  function convertNotes(taikoObjects, timingPoints, noteType, density, colorMode) {
+  function convertNotes(taikoObjects, timingPoints, noteType, colorMode, offsetMs) {
     const notes = [];
     let filtered = taikoObjects;
+    
+    // Filter by note type (Don/Kat)
     if (noteType === 'don') filtered = filtered.filter(n => n.isDon);
     else if (noteType === 'kat') filtered = filtered.filter(n => n.isKat);
     
+    // Filter hitSound 12 (ring notes)
     if (!includeHitSound12.checked) {
       filtered = filtered.filter(n => !n.isHitSound12);
     }
     
-    const densityMap = { 'all': 1, 'reduced': 2, 'sparse': 4 };
-    const keepEvery = densityMap[density] || 1;
-    
+    // NO DENSITY FILTERING - keep EVERY note
     let noteIndex = 0;
     for (let i = 0; i < filtered.length; i++) {
-      if (i % keepEvery !== 0) continue;
       const obj = filtered[i];
       const bpm = getBpmAtTime(obj.time, timingPoints);
       const beatInterval = (60 / bpm) * 1000;
       
-      // USE ORIGINAL TIME - EXACT
-      const time = obj.time;
+      let time = obj.time + offsetMs;
       
       const color = assignColor(noteIndex, obj, colorMode);
       notes.push({
-        time: time,
+        time: Math.round(time),
         duration: Math.round(beatInterval),
         color: color,
         isDon: color === 'don',
         isKat: color === 'kat',
-        isRing: obj.isRing, // ONLY hitSound 12 = true
+        isRing: obj.isRing,
         isType5: obj.isType5,
         isHitSound12: obj.isHitSound12,
         type: obj.type,
         hitSound: obj.hitSound,
+        originalTime: obj.time,
+        offsetApplied: offsetMs,
         bpm: bpm
       });
       noteIndex++;
     }
+    
     return notes;
   }
 
@@ -596,7 +625,7 @@
       bpmInfo.textContent = `⚡ ${bpm} BPM`;
       
       const hitObjects = parseTaikoObjects(sections['HitObjects'] || []);
-      log(`🥁 ${hitObjects.length} Taiko notes`);
+      log(`🥁 Found ${hitObjects.length} Taiko notes in OSU file`);
       
       if (hitObjects.length === 0) {
         log('⚠️ No Taiko notes found!', true);
@@ -611,14 +640,13 @@
       const ringCount = hitObjects.filter(n => n.isRing).length;
       
       log(`📊 Don: ${donCount}, Kat: ${katCount}`);
-      log(`💥 Type 5 notes: ${type5Count} (NOT ring)`);
-      log(`🎯 hitSound 12 notes: ${hitSound12Count} (ring: true)`);
+      log(`💥 Type 5 (big): ${type5Count} (NOT ring)`);
+      log(`🎯 hitSound 12 (clap): ${hitSound12Count} (ring: true)`);
       log(`⭕ Ring notes: ${ringCount}`);
       
-      // Show timing sample
       if (hitObjects.length > 0) {
         const sample = hitObjects.slice(0, 5);
-        log(`📝 Original timing sample: ${sample.map(n => n.time).join(', ')}ms`);
+        log(`📝 First 5 original timings: ${sample.map(n => n.time).join(', ')}ms`);
       }
       
       parsedData = {
@@ -652,36 +680,37 @@
       return;
     }
     statusDot.className = 'dot processing';
-    log('🔄 Converting with EXACT timing...');
+    
+    const offset = parseInt(syncOffset.value) || 0;
+    log(`🔄 Converting with offset: ${offset}ms`);
     
     try {
       const noteType = noteTypeSelect.value;
-      const density = densitySelect.value;
       const colorMode = colorSelect.value;
       
       convertedNotes = convertNotes(
         parsedData.taikoObjects,
         parsedData.timingPoints,
-        noteType, density, colorMode
+        noteType, colorMode, offset
       );
       
-      log(`✅ ${convertedNotes.length} notes converted`);
+      const totalFound = parsedData.taikoObjects.length;
+      const totalConverted = convertedNotes.length;
+      
+      log(`✅ ${totalConverted} notes converted (${totalFound} found in OSU) - ALL KEPT!`);
       
       const donCount = convertedNotes.filter(n => n.isDon).length;
       const katCount = convertedNotes.filter(n => n.isKat).length;
       const ringCount = convertedNotes.filter(n => n.isRing).length;
-      const type5Count = convertedNotes.filter(n => n.isType5).length;
       log(`🎨 Don: ${donCount}, Kat: ${katCount}`);
       log(`⭕ ${ringCount} notes have ring: true (hitSound 12 only)`);
-      log(`💥 ${type5Count} Type 5 notes are NOT ring`);
       
       if (convertedNotes.length > 0) {
-        log('📝 Sample output (EXACT timing):');
-        const sample = convertedNotes.slice(0, 8);
+        log('📝 First 5 output notes:');
+        const sample = convertedNotes.slice(0, 5);
         sample.forEach(n => {
-          log(`   ${n.time}ms → ${n.color.toUpperCase()}${n.isRing ? ' ⭕ RING' : ''} (type:${n.type}, hs:${n.hitSound})`);
+          log(`   ${n.time}ms → ${n.color.toUpperCase()}${n.isRing ? ' ⭕ RING' : ''} (orig: ${n.originalTime}ms)`);
         });
-        if (convertedNotes.length > 8) log(`   ... and ${convertedNotes.length - 8} more`);
       }
       
       statusDot.className = 'dot success';
@@ -700,6 +729,7 @@
     
     const bpm = parsedData ? parsedData.bpm : 132;
     const beatInterval = (60 / bpm) * 1000;
+    const offset = parseInt(syncOffset.value) || 0;
     const sbcData = { metronome: [], introEnd: -1, events: [] };
     
     if (generateMetronome.checked && parsedData) {
@@ -711,37 +741,25 @@
     
     sbcData.events.push({ time: 0, type: "BPM", bpm: bpm });
     
-    const addedTimes = new Set();
+    // Keep ALL notes - no duplicate filtering
     convertedNotes.forEach(note => {
       const roundedTime = Math.round(note.time);
-      if (!addedTimes.has(roundedTime)) {
-        // ONLY hitSound 12 = ring
-        const duration = note.isRing ? Math.round(beatInterval * 1.5) : Math.round(beatInterval);
-        sbcData.events.push({
-          duration: duration,
-          glitch: "NO_ABILITY",
-          ring: note.isRing, // ONLY hitSound 12 = true
-          count: 1,
-          time: roundedTime,
-          type: "BEAT"
-        });
-        addedTimes.add(roundedTime);
-      }
+      const duration = note.isRing ? Math.round(beatInterval * 1.5) : Math.round(beatInterval);
+      sbcData.events.push({
+        duration: duration,
+        glitch: "NO_ABILITY",
+        ring: note.isRing,
+        count: 1,
+        time: roundedTime,
+        type: "BEAT"
+      });
     });
     sbcData.events.sort((a, b) => (a.time || 0) - (b.time || 0));
     
     const beatEvents = sbcData.events.filter(e => e.type === 'BEAT');
     const ringCount = beatEvents.filter(e => e.ring === true).length;
     log(`📊 ${beatEvents.length} BEAT events (${ringCount} with ring: true)`);
-    
-    // Show exact spacing
-    if (beatEvents.length > 3) {
-      const gaps = [];
-      for (let i = 1; i < Math.min(beatEvents.length, 6); i++) {
-        gaps.push(beatEvents[i].time - beatEvents[i-1].time);
-      }
-      log(`📊 Spacing: ${gaps.join(', ')}ms`);
-    }
+    log(`📊 Offset applied: ${offset}ms`);
     
     const jsonStr = JSON.stringify(sbcData, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -769,6 +787,10 @@
   processBtn.addEventListener('click', processContent);
   exportBtn.addEventListener('click', exportSbc);
   clearBtn.addEventListener('click', clearAll);
+  resetOffsetBtn.addEventListener('click', () => {
+    syncOffset.value = 0;
+    if (parsedData) performConversion();
+  });
 
   osuTextarea.addEventListener('input', () => {
     charCount.textContent = `${osuTextarea.value.length} characters`;
@@ -779,17 +801,17 @@
     }
   });
 
-  [noteTypeSelect, densitySelect, colorSelect, includeHitSound12].forEach(el => {
+  [syncOffset, noteTypeSelect, colorSelect, includeHitSound12].forEach(el => {
     el.addEventListener('change', () => {
       if (parsedData) performConversion();
     });
   });
 
   updateUI();
-  log('🥁 Paste your .osu file content in the text area above.');
-  log('📝 Click "Process OSU Data" to convert.');
-  log('⚡ EXACT timing from OSU - no snapping!');
-  log('⭕ ONLY hitSound 12 = "ring": true (Type 5 is NOT ring)');
+  log('🥁 Paste your .osu file content above.');
+  log('📊 EVERY note is kept - NO filtering!');
+  log('⚡ EXACT timing from OSU');
+  log('⭕ ONLY hitSound 12 = "ring": true');
   statusDot.className = 'dot idle';
 })();
 </script>
