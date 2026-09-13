@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🥁 OSU Taiko to SBC Converter - ALL NOTES</title>
+  <title>🥁 OSU Taiko to SBC Converter</title>
   <style>
     * {
       box-sizing: border-box;
@@ -301,8 +301,8 @@
 <body>
 <div class="card">
   
-  <h1><span class="emoji">🥁</span> OSU Taiko to SBC <small>v6.1 - ALL NOTES</small></h1>
-  <div class="sub"><strong>📝 Paste your .osu file</strong> → <strong>Converts ALL notes (no filters)</strong> → <strong>Export SBC</strong></div>
+  <h1><span class="emoji">🥁</span> OSU Taiko to SBC <small>v7.0</small></h1>
+  <div class="sub"><strong>📝 Paste your .osu file</strong> → <strong>Converts ALL notes + keeps SECTION</strong> → <strong>Export SBC</strong></div>
 
   <textarea class="osu-textarea" id="osuTextarea" placeholder="Paste your .osu file content here..."></textarea>
   <div class="file-info">
@@ -345,6 +345,7 @@
 
   <div class="checkbox-group"><input type="checkbox" id="includeHitSound12" checked><label>⭕ hitSound 12 notes = "ring": true</label></div>
   <div class="checkbox-group"><input type="checkbox" id="generateMetronome" checked><label>Generate metronome</label></div>
+  <div class="checkbox-group"><input type="checkbox" id="keepSection" checked><label>📌 Keep SECTION event in output</label></div>
 
   <div class="actions">
     <button class="btn btn-warning" id="processBtn">🔄 Process OSU Data</button>
@@ -366,11 +367,9 @@
   <div class="footer">
     <span>🥁 Converts ALL Taiko notes to BEAT events</span>
     <span>•</span>
-    <span>⚡ EXACT timing from OSU</span>
+    <span>📌 Keeps SECTION event</span>
     <span>•</span>
     <span>⭕ ONLY hitSound 12 = "ring": true</span>
-    <span>•</span>
-    <span>📊 NO density filtering - every note is kept!</span>
   </div>
 </div>
 
@@ -397,6 +396,7 @@
   const colorSelect = document.getElementById('colorSelect');
   const includeHitSound12 = document.getElementById('includeHitSound12');
   const generateMetronome = document.getElementById('generateMetronome');
+  const keepSection = document.getElementById('keepSection');
 
   let parsedData = null;
   let convertedNotes = [];
@@ -482,7 +482,6 @@
         const isHitSound12 = (hitSound === 12);
         const isRing = isHitSound12;
         
-        // EVERY note that is Don or Kat gets added - NO FILTERING
         if (isDon || isKat) {
           objects.push({
             time: time,
@@ -550,16 +549,13 @@
     const notes = [];
     let filtered = taikoObjects;
     
-    // Filter by note type (Don/Kat)
     if (noteType === 'don') filtered = filtered.filter(n => n.isDon);
     else if (noteType === 'kat') filtered = filtered.filter(n => n.isKat);
     
-    // Filter hitSound 12 (ring notes)
     if (!includeHitSound12.checked) {
       filtered = filtered.filter(n => !n.isHitSound12);
     }
     
-    // NO DENSITY FILTERING - keep EVERY note
     let noteIndex = 0;
     for (let i = 0; i < filtered.length; i++) {
       const obj = filtered[i];
@@ -730,18 +726,45 @@
     const bpm = parsedData ? parsedData.bpm : 132;
     const beatInterval = (60 / bpm) * 1000;
     const offset = parseInt(syncOffset.value) || 0;
-    const sbcData = { metronome: [], introEnd: -1, events: [] };
     
+    // Build the SBC data with the new default structure
+    const sbcData = { 
+      metronome: [], 
+      introEnd: -1, 
+      events: [] 
+    };
+    
+    // Generate metronome if enabled
     if (generateMetronome.checked && parsedData) {
       const lastNote = convertedNotes[convertedNotes.length - 1];
       const totalDuration = lastNote ? lastNote.time + 5000 : 300000;
       sbcData.metronome = generateMetronomeArray(parsedData.timingPoints, totalDuration);
       log(`📊 ${sbcData.metronome.length} metronome beats`);
+    } else {
+      // Default metronome
+      sbcData.metronome = [0];
     }
     
+    // Add BPM event
     sbcData.events.push({ time: 0, type: "BPM", bpm: bpm });
     
-    // Keep ALL notes - no duplicate filtering
+    // Keep SECTION event if enabled
+    if (keepSection.checked) {
+      sbcData.events.push({
+        overflowAllowed: false,
+        dynamics: "STRAIGHT",
+        beatsPerBar: 4,
+        offset: 0,
+        name: "Verse 1",
+        time: 0,
+        type: "SECTION",
+        camera: "TOP",
+        energy: 1
+      });
+      log(`📌 SECTION event preserved`);
+    }
+    
+    // Add all BEAT events - keep every note
     convertedNotes.forEach(note => {
       const roundedTime = Math.round(note.time);
       const duration = note.isRing ? Math.round(beatInterval * 1.5) : Math.round(beatInterval);
@@ -754,6 +777,8 @@
         type: "BEAT"
       });
     });
+    
+    // Sort events by time (keeping BPM and SECTION at time 0)
     sbcData.events.sort((a, b) => (a.time || 0) - (b.time || 0));
     
     const beatEvents = sbcData.events.filter(e => e.type === 'BEAT');
@@ -801,7 +826,7 @@
     }
   });
 
-  [syncOffset, noteTypeSelect, colorSelect, includeHitSound12].forEach(el => {
+  [syncOffset, noteTypeSelect, colorSelect, includeHitSound12, keepSection].forEach(el => {
     el.addEventListener('change', () => {
       if (parsedData) performConversion();
     });
@@ -809,8 +834,8 @@
 
   updateUI();
   log('🥁 Paste your .osu file content above.');
+  log('📌 SECTION event will be preserved in output');
   log('📊 EVERY note is kept - NO filtering!');
-  log('⚡ EXACT timing from OSU');
   log('⭕ ONLY hitSound 12 = "ring": true');
   statusDot.className = 'dot idle';
 })();
