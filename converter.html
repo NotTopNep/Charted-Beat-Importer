@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎬 YouTube to MP3/MP4 Converter</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f1219;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #e8edf5;
+    }
+    .card {
+      max-width: 760px;
+      width: 100%;
+      background: #1a1f2b;
+      border-radius: 32px;
+      padding: 40px 36px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      border: 1px solid #2d3548;
+    }
+    h1 {
+      font-weight: 700;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    h1 .emoji { color: #fbbf24; }
+    h1 small {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #8892b0;
+      background: #111724;
+      padding: 4px 14px;
+      border-radius: 40px;
+      border: 1px solid #2d3548;
+      margin-left: auto;
+    }
+    .sub {
+      color: #9aa2be;
+      margin-bottom: 28px;
+      border-left: 3px solid #4f6ef7;
+      padding-left: 16px;
+      font-size: 0.95rem;
+    }
+    label {
+      font-size: 0.7rem;
+      color: #6a7699;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 6px;
+      margin-top: 18px;
+    }
+    .url-input {
+      width: 100%;
+      background: #0c111b;
+      border: 1px solid #2d3548;
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: #e8edf5;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    .url-input:focus {
+      outline: none;
+      border-color: #4f6ef7;
+      box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
+    }
+    .url-input::placeholder { color: #6a7699; }
+
+    .paste-btn {
+      background: transparent;
+      border: none;
+      color: #6a7699;
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 6px 0;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    .paste-btn:hover { color: #4f6ef7; }
+
+    .format-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 6px;
+    }
+    .format-btn {
+      background: #0c111b;
+      border: 2px solid #2d3548;
+      border-radius: 14px;
+      padding: 20px;
+      cursor: pointer;
+      transition: 0.2s;
+      color: #8892b0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-align: center;
+      font-family: inherit;
+    }
+    .format-btn:hover {
+      border-color: #4f6ef7;
+      color: #e8edf5;
+    }
+    .format-btn.active {
+      border-color: #4f6ef7;
+      background: rgba(79,110,247,0.1);
+      color: #4f6ef7;
+      box-shadow: 0 0 20px rgba(79,110,247,0.15);
+    }
+    .format-btn .sub-text {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: #6a7699;
+      margin-top: 4px;
+    }
+    .format-btn.active .sub-text { color: #8892b0; }
+
+    select {
+      width: 100%;
+      background: #0c111b;
+      border: 1px solid #2d3548;
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #e8edf5;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    select:focus {
+      outline: none;
+      border-color: #4f6ef7;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .btn {
+      flex: 1;
+      padding: 16px 28px;
+      border-radius: 60px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.15s;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
+      min-height: 54px;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary {
+      background: #4f6ef7;
+      color: white;
+      box-shadow: 0 4px 16px rgba(79,110,247,0.3);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #3f5ee7;
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: #1f283c;
+      color: #e8edf5;
+      border: 1px solid #2d3548;
+      flex: 0 0 auto;
+      padding: 16px 24px;
+    }
+    .btn-secondary:hover { background: #2d3548; }
+
+    .status {
+      background: #0c111b;
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid #252f45;
+      font-size: 0.9rem;
+      color: #b2bddb;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: #4a556e;
+      transition: background 0.3s;
+    }
+    .dot.processing {
+      background: #fbbf24;
+      animation: pulse 1s infinite;
+    }
+    .dot.success { background: #34d399; }
+    .dot.error { background: #f87171; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .progress-wrapper {
+      margin-top: 16px;
+      display: none;
+    }
+    .progress-wrapper.active { display: block; }
+    .progress-bar {
+      height: 8px;
+      background: #1f283c;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4f6ef7, #34d399);
+      width: 0%;
+      transition: width 0.3s;
+      border-radius: 4px;
+    }
+
+    .log {
+      background: #0c111b;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.75rem;
+      color: #8892b0;
+      max-height: 150px;
+      overflow-y: auto;
+      border: 1px solid #1f283b;
+      margin-top: 16px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+    }
+    .log:empty { display: none; }
+
+    .video-preview {
+      display: none;
+      margin-top: 20px;
+      background: #0c111b;
+      border-radius: 14px;
+      padding: 16px;
+      border: 1px solid #2d3548;
+      align-items: center;
+      gap: 16px;
+    }
+    .video-preview.active { display: flex; }
+    .video-preview img {
+      width: 120px;
+      height: 68px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .video-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .video-info .title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #e8edf5;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .video-info .meta {
+      font-size: 0.75rem;
+      color: #6a7699;
+    }
+
+    .divider {
+      height: 1px;
+      background: #283040;
+      margin: 20px 0;
+      border: none;
+    }
+
+    .legal-note {
+      font-size: 0.7rem;
+      color: #6a7699;
+      text-align: center;
+      margin-top: 20px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  
+  <h1>
+    <span class="emoji">🎬</span>
+    YouTube Converter
+    <small>v1.0</small>
+  </h1>
+  <div class="sub">Convert YouTube videos to <strong>MP4</strong> or <strong>MP3</strong> — for personal use only</div>
+
+  <!-- URL Input -->
+  <label>🔗 YouTube URL</label>
+  <input type="text" class="url-input" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+  <button class="paste-btn" id="pasteBtn">📋 Paste from clipboard</button>
+
+  <!-- Video Preview -->
+  <div class="video-preview" id="videoPreview">
+    <img id="thumbImg" src="" alt="">
+    <div class="video-info">
+      <div class="title" id="videoTitle">—</div>
+      <div class="meta" id="videoMeta">—</div>
+    </div>
+  </div>
+
+  <!-- Format Selection -->
+  <label>🎯 Format</label>
+  <div class="format-grid">
+    <button class="format-btn active" id="mp4Btn" data-format="mp4">
+      🎥 MP4
+      <span class="sub-text">Video + Audio</span>
+    </button>
+    <button class="format-btn" id="mp3Btn" data-format="mp3">
+      🎵 MP3
+      <span class="sub-text">Audio only</span>
+    </button>
+  </div>
+
+  <!-- Quality -->
+  <label>💎 Quality</label>
+  <select id="qualitySelect">
+    <option value="best">Best Available</option>
+    <option value="1080">1080p</option>
+    <option value="720">720p</option>
+    <option value="480">480p</option>
+    <option value="360">360p</option>
+  </select>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-primary" id="convertBtn">
+      ⬇️ Get Download Link
+    </button>
+    <button class="btn btn-secondary" id="clearBtn">🗑️</button>
+  </div>
+
+  <!-- Status -->
+  <div class="status">
+    <span class="dot" id="statusDot"></span>
+    <span id="statusText">Paste a YouTube URL to get started</span>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrapper" id="progressWrapper">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="log" id="logOutput"></div>
+
+  <hr class="divider">
+
+  <div class="legal-note">
+    ⚠️ <strong>Personal use only.</strong> Only download content you own or have permission to use.<br>
+    Respect copyright laws and YouTube's Terms of Service.
+  </div>
+
+</div>
+
+<script>
+(function() {
+  // DOM refs
+  const urlInput = document.getElementById('urlInput');
+  const pasteBtn = document.getElementById('pasteBtn');
+  const mp4Btn = document.getElementById('mp4Btn');
+  const mp3Btn = document.getElementById('mp3Btn');
+  const qualitySelect = document.getElementById('qualitySelect');
+  const convertBtn = document.getElementById('convertBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const progressWrapper = document.getElementById('progressWrapper');
+  const progressFill = document.getElementById('progressFill');
+  const logOutput = document.getElementById('logOutput');
+  const videoPreview = document.getElementById('videoPreview');
+  const thumbImg = document.getElementById('thumbImg');
+  const videoTitle = document.getElementById('videoTitle');
+  const videoMeta = document.getElementById('videoMeta');
+
+  let currentFormat = 'mp4';
+  let currentUrl = '';
+
+  // ============ HELPERS ============
+  function log(msg) {
+    logOutput.textContent += msg + '\n';
+    logOutput.scrollTop = logOutput.scrollHeight;
+  }
+
+  function clearLog() { logOutput.textContent = ''; }
+
+  function setStatus(text, type = 'idle') {
+    statusText.textContent = text;
+    statusDot.className = 'dot ' + type;
+  }
+
+  function setProgress(percent) {
+    if (percent > 0) {
+      progressWrapper.classList.add('active');
+      progressFill.style.width = percent + '%';
+    } else {
+      progressWrapper.classList.remove('active');
+      progressFill.style.width = '0%';
+    }
+  }
+
+  // Extract YouTube video ID
+  function getVideoId(url) {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+      /^([a-zA-Z0-9_-]{11})$/
+    ];
+    for (const p of patterns) {
+      const m = url.match(p);
+      if (m) return m[1];
+    }
+    return null;
+  }
+
+  // ============ FORMAT BUTTONS ============
+  mp4Btn.addEventListener('click', () => {
+    currentFormat = 'mp4';
+    mp4Btn.classList.add('active');
+    mp3Btn.classList.remove('active');
+  });
+
+  mp3Btn.addEventListener('click', () => {
+    currentFormat = 'mp3';
+    mp3Btn.classList.add('active');
+    mp4Btn.classList.remove('active');
+  });
+
+  // ============ PASTE ============
+  pasteBtn.addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      urlInput.value = text.trim();
+      loadVideoInfo();
+    } catch (err) {
+      log('⚠️ Clipboard access denied. Paste manually with Ctrl+V.');
+    }
+  });
+
+  // ============ LOAD VIDEO INFO ============
+  urlInput.addEventListener('input', debounce(loadVideoInfo, 500));
+  urlInput.addEventListener('paste', () => setTimeout(loadVideoInfo, 100));
+
+  function debounce(fn, delay) {
+    let timer;
+    return function(...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+  }
+
+  async function loadVideoInfo() {
+    const url = urlInput.value.trim();
+    if (!url) {
+      videoPreview.classList.remove('active');
+      return;
+    }
+
+    const videoId = getVideoId(url);
+    if (!videoId) {
+      videoPreview.classList.remove('active');
+      return;
+    }
+
+    if (currentUrl === url) return;
+    currentUrl = url;
+
+    setStatus('🔍 Loading video info...', 'processing');
+
+    // Use noembed.com (free, no API key required)
+    try {
+      const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      videoPreview.classList.add('active');
+      thumbImg.src = data.thumbnail_url || `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+      videoTitle.textContent = data.title || 'Unknown title';
+      videoMeta.textContent = data.author_name ? `by ${data.author_name}` : '';
+
+      setStatus('✅ Video found. Choose format and click download.', 'success');
+      log(`📹 Video: ${data.title}`);
+      log(`👤 Channel: ${data.author_name || 'Unknown'}`);
+      
+    } catch (err) {
+      // Fallback: just show thumbnail
+      videoPreview.classList.add('active');
+      thumbImg.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+      videoTitle.textContent = 'Video ID: ' + videoId;
+      videoMeta.textContent = 'Loading info...';
+      setStatus('✅ Video found. Ready to download.', 'success');
+    }
+  }
+
+  // ============ CONVERT / DOWNLOAD ============
+  convertBtn.addEventListener('click', async () => {
+    const url = urlInput.value.trim();
+    
+    if (!url) {
+      setStatus('⚠️ Please paste a YouTube URL first.', 'error');
+      return;
+    }
+
+    const videoId = getVideoId(url);
+    if (!videoId) {
+      setStatus('⚠️ Invalid YouTube URL.', 'error');
+      return;
+    }
+
+    const quality = qualitySelect.value;
+    const format = currentFormat;
+
+    clearLog();
+    setStatus('⏳ Fetching download link...', 'processing');
+    setProgress(30);
+    convertBtn.disabled = true;
+    convertBtn.textContent = '⏳ Loading...';
+
+    log(`🎬 Format: ${format.toUpperCase()}`);
+    log(`💎 Quality: ${quality}`);
+    log(`🔗 Video ID: ${videoId}`);
+    log('');
+
+    // Since we're in pure HTML, we can't directly download from YouTube without a backend.
+    // Instead, we open a trusted third-party service that handles the conversion.
+    // These services work client-side through their own servers.
+    
+    try {
+      // Use a reliable third-party service
+      let downloadUrl = '';
+      
+      if (format === 'mp3') {
+        // MP3 conversion service
+        downloadUrl = `https://api.vevioz.com/api/button/mp3/${videoId}`;
+        log('🎵 Opening MP3 download service...');
+        log('💡 A new tab will open with the download page.');
+        log('💡 Click the "Download" button on that page.');
+        
+        setProgress(100);
+        setStatus('✅ MP3 service opened in new tab', 'success');
+        
+        setTimeout(() => {
+          window.open(`https://y2mate.com/youtube/${videoId}`, '_blank');
+        }, 500);
+        
+      } else {
+        // MP4 conversion service
+        let qualityParam = '';
+        if (quality === '1080') qualityParam = '1080';
+        else if (quality === '720') qualityParam = '720';
+        else if (quality === '480') qualityParam = '480';
+        else if (quality === '360') qualityParam = '360';
+        
+        log('🎥 Opening MP4 download service...');
+        log('💡 A new tab will open with the download page.');
+        log('💡 Choose your quality and click Download.');
+        
+        setProgress(100);
+        setStatus('✅ MP4 service opened in new tab', 'success');
+        
+        setTimeout(() => {
+          if (qualityParam) {
+            window.open(`https://y2mate.com/youtube/${videoId}?quality=${qualityParam}`, '_blank');
+          } else {
+            window.open(`https://y2mate.com/youtube/${videoId}`, '_blank');
+          }
+        }, 500);
+      }
+      
+      log('');
+      log('📌 If the first service doesn\'t work, try:');
+      log('   • https://ytmp3.cc');
+      log('   • https://y2mate.com');
+      log('   • https://ssyoutube.com');
+      
+    } catch (err) {
+      setStatus('❌ Error: ' + err.message, 'error');
+      log('❌ Error: ' + err.message);
+    } finally {
+      setTimeout(() => {
+        convertBtn.disabled = false;
+        convertBtn.textContent = '⬇️ Get Download Link';
+        setProgress(0);
+      }, 1500);
+    }
+  });
+
+  // ============ CLEAR ============
+  clearBtn.addEventListener('click', () => {
+    urlInput.value = '';
+    currentUrl = '';
+    videoPreview.classList.remove('active');
+    clearLog();
+    setProgress(0);
+    setStatus('Paste a YouTube URL to get started');
+  });
+
+  // ============ INIT ============
+  log('🎬 YouTube Converter ready.');
+  log('📋 Paste a YouTube URL or click "Paste from clipboard".');
+  log('');
+  log('⚠️ This tool opens trusted third-party services to handle downloads.');
+  log('   These services process the video on their servers.');
+})();
+</script>
+</body>
+</html>
